@@ -1,0 +1,76 @@
+2025-11-28 09:03:28.756 - INFO - -----------------------------------------------------
+2025-11-28 09:03:28.757 - INFO - Začátek
+2025-11-28 09:34:18.686 - INFO - -----------------------------------------------------
+2025-11-28 09:34:18.687 - INFO - Začátek
+2025-11-28 09:34:18.695 - INFO - main : Opened /dev/ttyACM_back_left @ 115200
+2025-11-28 09:34:18.696 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:34:19.702 - INFO - main : No card / no response
+2025-11-28 09:34:20.703 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:34:21.706 - INFO - main : No card / no response
+2025-11-28 09:34:22.708 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:34:23.711 - INFO - main : No card / no response
+2025-11-28 09:34:24.713 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:34:25.716 - INFO - main : No card / no response
+2025-11-28 09:34:26.718 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:34:27.721 - INFO - main : No card / no response
+2025-11-28 09:34:28.723 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:34:29.726 - INFO - main : No card / no response
+2025-11-28 09:35:15.260 - INFO - -----------------------------------------------------
+2025-11-28 09:35:15.261 - INFO - Začátek
+2025-11-28 09:35:15.269 - INFO - main : Opened /dev/ttyACM_back_left @ 115200
+2025-11-28 09:35:15.270 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:35:16.274 - DEBUG - main : No card / no response
+2025-11-28 09:35:17.276 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:35:18.278 - DEBUG - main : No card / no response
+2025-11-28 09:35:19.280 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:35:20.283 - DEBUG - main : No card / no response
+2025-11-28 09:35:21.285 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:49:24.799 - INFO - -----------------------------------------------------
+2025-11-28 09:49:24.800 - INFO - Začátek
+2025-11-28 09:49:24.808 - INFO - main : Opened /dev/ttyACM_back_left @ 115200
+2025-11-28 09:49:24.809 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:49:25.813 - DEBUG - main : No card / no response
+2025-11-28 09:49:26.815 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:49:27.817 - DEBUG - main : No card / no response
+2025-11-28 09:49:28.819 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:49:29.821 - DEBUG - main : No card / no response
+2025-11-28 09:49:30.824 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:49:31.828 - DEBUG - main : b'00CE01A27'
+2025-11-28 09:49:31.829 - INFO - main : UID: 303043453031413237  SW: 35 0D
+2025-11-28 09:49:32.831 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:49:33.833 - DEBUG - main : No card / no response
+2025-11-28 09:49:34.835 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:49:35.838 - DEBUG - main : No card / no response
+2025-11-28 09:49:36.841 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 09:49:37.844 - DEBUG - main : No card / no response
+2025-11-28 09:49:38.846 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 10:26:48.248 - INFO - -----------------------------------------------------
+2025-11-28 10:26:48.249 - INFO - Začátek
+2025-11-28 10:26:48.257 - INFO - main : Opened /dev/ttyACM_back_left @ 115200
+2025-11-28 10:26:48.260 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 10:26:49.262 - DEBUG - main : No card / no response
+2025-11-28 10:26:50.264 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 10:26:51.266 - DEBUG - main : No card / no response
+2025-11-28 10:26:52.268 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 10:26:53.270 - DEBUG - main : No card / no response
+2025-11-28 10:26:54.272 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 10:26:55.275 - DEBUG - main : No card / no response
+2025-11-28 10:26:56.278 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 10:26:57.281 - DEBUG - main : No card / no response
+2025-11-28 10:26:58.283 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 10:26:59.287 - DEBUG - main : b'00CE01A27'
+2025-11-28 10:26:59.288 - INFO - main : UID: 303043453031413237  SW: 35 0D
+2025-11-28 10:27:00.290 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 10:27:01.293 - DEBUG - main : No card / no response
+2025-11-28 10:27:02.295 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 10:31:44.873 - INFO - -----------------------------------------------------
+2025-11-28 10:31:44.874 - INFO - Začátek
+2025-11-28 10:31:44.881 - INFO - main : Opened /dev/ttyACM_back_left @ 115200
+2025-11-28 10:31:44.882 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 10:31:45.885 - DEBUG - main : No card / no response
+2025-11-28 10:31:46.887 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 10:31:48.247 - DEBUG - main : b'00CE01A27'
+2025-11-28 10:31:48.249 - INFO - main : UID: 303043453031413237  SW: 35 0D
+2025-11-28 10:31:49.251 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]
+2025-11-28 10:31:50.254 - DEBUG - main : No card / no response
+2025-11-28 10:31:51.255 - DEBUG - main : Sending APDU: [255, 202, 0, 0, 0]

@@ -1,7 +1,9 @@
+import logging
+import time
+
 from smartcard.System import readers
 from smartcard.util import toHexString
 
-import time
 from smartcard.Exceptions import NoCardException
 
 APDU_COMMANDS = {
