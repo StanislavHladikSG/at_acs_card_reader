@@ -1,0 +1,10 @@
+{
+    "port": "/dev/ttyACM_back_left",
+    "baudrate": 115200,
+    "interval": 1.0,
+    "code": "ns=1;i=100011",
+    "code_potvrzeni": "ns=1;i=100012",
+    "code_health_check": "ns=1;i=100013",
+    "code_health_check_message": "ns=1;i=100014",
+    "log_retention_days": 30
+}
