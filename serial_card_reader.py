@@ -110,7 +110,6 @@ def send_apdu_and_read(ser: serial.Serial, apdu: list, add_newline=True):
             log_and_print(funkce=inspect.currentframe().f_code.co_name, text=f"Sent APDU: {binascii.hexlify(b).decode('ascii').upper()}, Received: {binascii.hexlify(line).decode('ascii').upper()}", type_of_log="DEBUG")
     except Exception as e:
         log_and_print(funkce=inspect.currentframe().f_code.co_name, text=f"Error sending APDU {binascii.hexlify(b).decode('ascii').upper()}: {e}", type_of_log="ERROR")
-        zapis_do_opc(code_health_check, False)
         return None, None, None
 
     return return_value
@@ -181,41 +180,54 @@ def load_config(config_file=None):
     
     try:
         with open(config_file) as f:
-            config = json.load(f)
+            config_data = json.load(f)
             
-            # Load configuration with default values
-            pPort = config.get('port', '/dev/ttyACM_back_left')
-            pBaudrate = config.get('baudrate', 115200)
-            pInterval = config.get('interval', 1.0)
-            code = config.get('code', 'ns=1;i=100011')
-            code_potvrzeni = config.get('code_potvrzeni', 'ns=1;i=100012')
-            code_health_check = config.get('code_health_check', 'ns=1;i=100013')
-            code_health_check_message = config.get('code_health_check_message', 'ns=1;i=100014')
-            log_retention_days = config.get('log_retention_days', 30)  # Keep logs for 30 days
+            # Extract reader configurations and log settings
+            reader_configs = config_data.get('reader_configurations', [])
+            log_retention_days = config_data.get('log_retention_days', 30)
+            log_level = config_data.get('log_level', 'INFO').upper()
             
-            log_and_print(funkce=inspect.currentframe().f_code.co_name, text=f"Configuration loaded from: {config_file}", type_of_log="DEBUG")
+            # If reader_configurations key doesn't exist, check if it's direct array or single object (backward compatibility)
+            if not reader_configs:
+                if isinstance(config_data, list):
+                    reader_configs = config_data
+                else:
+                    reader_configs = [config_data]
+            
+            readers = []
+            for idx, reader_config in enumerate(reader_configs):
+                reader = {
+                    'port': reader_config.get('port', '/dev/ttyACM_back_left'),
+                    'baudrate': reader_config.get('baudrate', 115200),
+                    'interval': reader_config.get('interval', 1.0),
+                    'code': reader_config.get('code', f'ns=1;i={100011 + idx * 4}'),
+                    'code_potvrzeni': reader_config.get('code_potvrzeni', f'ns=1;i={100012 + idx * 4}'),
+                    'code_health_check': reader_config.get('code_health_check', f'ns=1;i={100013 + idx * 4}'),
+                    'code_health_check_message': reader_config.get('code_health_check_message', f'ns=1;i={100014 + idx * 4}'),
+                }
+                readers.append(reader)
+            
+            log_and_print(funkce=inspect.currentframe().f_code.co_name, text=f"Configuration loaded: {len(readers)} reader(s) from {config_file}", type_of_log="DEBUG")
             return {
-                'port': pPort,
-                'baudrate': pBaudrate,
-                'interval': pInterval,
-                'code': code,
-                'code_potvrzeni': code_potvrzeni,
-                'code_health_check': code_health_check,
-                'code_health_check_message': code_health_check_message,
-                'log_retention_days': log_retention_days
+                'readers': readers,
+                'log_retention_days': log_retention_days,
+                'log_level': log_level
             }
     except FileNotFoundError:
         log_and_print(funkce=inspect.currentframe().f_code.co_name, text=f"Config file not found: {config_file}", type_of_log="WARNING")
         log_and_print(funkce=inspect.currentframe().f_code.co_name, text="Using default configuration values", type_of_log="INFO")
         return {
-            'port': '/dev/ttyACM_back_left',
-            'baudrate': 115200,
-            'interval': 1.0,
-            'code': 'ns=1;i=100011',
-            'code_potvrzeni': 'ns=1;i=100012',
-            'code_health_check': 'ns=1;i=100013',
-            'code_health_check_message': 'ns=1;i=100014',
-            'log_retention_days': 30
+            'readers': [{
+                'port': '/dev/ttyACM_back_left',
+                'baudrate': 115200,
+                'interval': 1.0,
+                'code': 'ns=1;i=100011',
+                'code_potvrzeni': 'ns=1;i=100012',
+                'code_health_check': 'ns=1;i=100013',
+                'code_health_check_message': 'ns=1;i=100014'
+            }],
+            'log_retention_days': 30,
+            'log_level': 'INFO'
         }
     except json.JSONDecodeError as e:
         log_and_print(funkce=inspect.currentframe().f_code.co_name, text=f"Error decoding JSON config: {e}", type_of_log="ERROR")
@@ -331,43 +343,47 @@ def actual_date_time():
     return curr_time.strftime('%Y_%m_%d__%H_%M_%S_%f')
 #------------------------------------------------------------------------------------------------------------------- 
 
-def read(pPort, pBaudrate, pInterval, stop_event):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--device', '-d', default=pPort)
-    parser.add_argument('--baud', type=int, default=pBaudrate)
-    parser.add_argument('--interval', type=float, default=pInterval)
-    args = parser.parse_args()
+def read(reader_config, reader_name, stop_event):
+    pPort = reader_config['port']
+    pBaudrate = reader_config['baudrate']
+    pInterval = reader_config['interval']
+    code = reader_config['code']
+    code_potvrzeni = reader_config['code_potvrzeni']
+    code_health_check = reader_config['code_health_check']
+    code_health_check_message = reader_config['code_health_check_message']
 
     try:
-        ser = serial.Serial(args.device, args.baud, timeout=1)
+        ser = serial.Serial(pPort, pBaudrate, timeout=1)
     except Exception as e:
-        log_and_print(f'Cannot open serial device {args.device}: {e}', 'main', 'ERROR')
-        zapis_do_opc("ns=2;s=CardReader.Error", f'Cannot open serial device {args.device}: {e}')
-        raise SystemExit(1)
+        log_and_print(f'{reader_name} ({pPort}): Cannot open serial device: {e}', 'read', 'ERROR')
+        zapis_do_opc(code_health_check, False)
+        zapis_do_opc(code_health_check_message, f'Cannot open serial device: {e}')
+        return
 
-
-    log_and_print(f'Opened {args.device} @ {args.baud}', 'main', 'INFO')
+    log_and_print(f'{reader_name} ({pPort}): Opened @ {pBaudrate}', 'read', 'INFO')
+    zapis_do_opc(code_health_check, True)
+    zapis_do_opc(code_health_check_message, 'OK')
 
     try:
         while not stop_event.is_set():
 
             apdu = APDU_COMMANDS['get_uid']['apdu']
-            log_and_print(f'Sending APDU: {apdu}', 'main', 'DEBUG')
+            log_and_print(f'{reader_name}: Sending APDU: {apdu}', 'read', 'DEBUG')
             payload, sw1, sw2 = send_apdu_and_read(ser, apdu)
 
             if payload is None or len(payload) == 0:
-                log_and_print('No card / no response', 'main', 'DEBUG')
+                log_and_print(f'{reader_name}: No card / no response', 'read', 'DEBUG')
             else:
-                log_and_print(str(payload), 'main', 'DEBUG')
+                log_and_print(f'{reader_name}: {str(payload)}', 'read', 'DEBUG')
                 zapis_do_opc(code, str(payload))
 
                 hex_payload = binascii.hexlify(payload).decode('ascii').upper()
                 if sw1 is not None and sw2 is not None:				
-                    log_and_print(f'UID: {hex_payload}  SW: {sw1:02X} {sw2:02X}', 'main', 'INFO')
+                    log_and_print(f'{reader_name}: UID: {hex_payload}  SW: {sw1:02X} {sw2:02X}', 'read', 'INFO')
                 else:
-                    log_and_print(f'UID (no SW): {hex_payload}', 'main', 'INFO')
+                    log_and_print(f'{reader_name}: UID (no SW): {hex_payload}', 'read', 'INFO')
 
-            time.sleep(args.interval)
+            time.sleep(pInterval)
     finally:
         try:
             ser.close()
@@ -439,20 +455,18 @@ if __name__ == '__main__':
 
     # Load configuration from JSON file
     config = load_config()
-    pPort = config['port']
-    pBaudrate = config['baudrate']
-    pInterval = config['interval']
-    code = config['code']
-    code_potvrzeni = config['code_potvrzeni']
-    code_health_check = config['code_health_check']
-    code_health_check_message = config['code_health_check_message']
+    readers_config = config['readers']
     log_retention_days = config['log_retention_days']
+    log_level = config['log_level']
+    
+    # Convert string log level to logging constant
+    numeric_level = getattr(logging, log_level, logging.INFO)
+    logger.setLevel(numeric_level)
     
     # Clean up old log files
     cleanup_old_logs(log_dir, log_retention_days)
-    
-    zapis_do_opc(code_health_check, True)
-    zapis_do_opc(code_health_check_message, f'OK')
+
+    log_and_print(f"Starting {len(readers_config)} card reader(s)...")
 
     # Create a threading event to signal thread shutdown
     stop_event = threading.Event()
@@ -465,18 +479,35 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, _signal_handler)
     signal.signal(signal.SIGTERM, _signal_handler)
 
-    card_reader = threading.Thread(target=read, args=(pPort, pBaudrate, pInterval, stop_event))
-    card_reader.daemon = False
-    card_reader.start()
+    # Create and start threads for all card readers
+    reader_threads = []
+    for idx, reader_cfg in enumerate(readers_config):
+        reader_name = f"Reader-{idx+1}"
+        log_and_print(f"Initializing {reader_name} on port {reader_cfg['port']}")
+        thread = threading.Thread(target=read, args=(reader_cfg, reader_name, stop_event), name=reader_name)
+        thread.daemon = False
+        reader_threads.append(thread)
+        thread.start()
 
     try:
-        # Keep the main thread alive
-        while card_reader.is_alive():
-            card_reader.join(timeout=1)
+        # Keep the main thread alive and check if all reader threads are still running
+        while True:
+            all_alive = True
+            for thread in reader_threads:
+                thread.join(timeout=1)
+                if not thread.is_alive():
+                    log_and_print(f"Thread {thread.name} is not alive", 'main', 'WARNING')
+                    all_alive = False
+            
+            if not all_alive:
+                stop_event.set()
+                break
     except KeyboardInterrupt:
-        pass
+        stop_event.set()
 
-    card_reader.join()
+    # Wait for all reader threads to finish
+    for thread in reader_threads:
+        thread.join()
 
     log_and_print("Konec", actual_date_time())
     log_and_print('-----------------------------------------------------')
