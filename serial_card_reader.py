@@ -365,7 +365,12 @@ def read(reader_config, reader_name, stop_event):
     zapis_do_opc(code_health_check_message, 'OK')
 
     try:
+
+        health_timer_count = 0
+
         while not stop_event.is_set():
+
+            before  = datetime.now()
 
             apdu = APDU_COMMANDS['get_uid']['apdu']
             log_and_print(f'{reader_name}: Sending APDU: {apdu}', 'read', 'DEBUG')
@@ -382,6 +387,19 @@ def read(reader_config, reader_name, stop_event):
                     log_and_print(f'{reader_name}: UID: {hex_payload}  SW: {sw1:02X} {sw2:02X}', 'read', 'INFO')
                 else:
                     log_and_print(f'{reader_name}: UID (no SW): {hex_payload}', 'read', 'INFO')
+
+            after  = datetime.now()
+
+            log_and_print(f'{reader_name}: Read duration: {(after - before).total_seconds():.3f} seconds', 'read', 'DEBUG')
+
+            # Write to opc tag health_check
+            if health_timer_count >= 10:
+                health_check = cteni_z_opc(code_health_check)
+                health_check += 1
+                zapis_do_opc(code_health_check, health_check)
+                health_timer_count = 0
+
+            health_timer_count += 1
 
             time.sleep(pInterval)
     finally:
@@ -498,10 +516,10 @@ if __name__ == '__main__':
                 if not thread.is_alive():
                     log_and_print(f"Thread {thread.name} is not alive", 'main', 'WARNING')
                     all_alive = False
-            
             if not all_alive:
                 stop_event.set()
                 break
+
     except KeyboardInterrupt:
         stop_event.set()
 

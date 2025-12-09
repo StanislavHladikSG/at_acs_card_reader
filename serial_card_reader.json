@@ -4,7 +4,7 @@
     "reader_configurations": [{
         "port": "/dev/ttyACM_back_left",
         "baudrate": 115200,
-        "interval": 1.0,
+        "interval": 0.1,
         "code": "ns=1;i=100011",
         "code_potvrzeni": "ns=1;i=100012",
         "code_health_check": "ns=1;i=100013",
@@ -13,10 +13,10 @@
     {        
         "port": "/dev/ttyACM_back_right",
         "baudrate": 115200,
-        "interval": 1.0,
-        "code": "ns=1;i=100011",
-        "code_potvrzeni": "ns=1;i=100012",
-        "code_health_check": "ns=1;i=100013",
-        "code_health_check_message": "ns=1;i=100014"
+        "interval": 0.1,
+        "code": "ns=1;i=100015",
+        "code_potvrzeni": "ns=1;i=100016",
+        "code_health_check": "ns=1;i=100017",
+        "code_health_check_message": "ns=1;i=100018"
         }]
 }
