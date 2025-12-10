@@ -50,10 +50,16 @@ APDU_COMMANDS = {
 }
 
 
+#-------------------------------------------------------------------------------------------------------------------
+# Function to convert APDU list to bytes
+#-------------------------------------------------------------------------------------------------------------------
 def apdu_to_bytes(apdu):
 	return bytes(apdu)
+#-------------------------------------------------------------------------------------------------------------------
 
-
+#-------------------------------------------------------------------------------------------------------------------
+# Function to parse serial response
+#-------------------------------------------------------------------------------------------------------------------
 def parse_serial_response(line: bytes):
     """Try to parse the device response.
 
@@ -88,8 +94,11 @@ def parse_serial_response(line: bytes):
 
     # Otherwise, treat entire response as payload with no status words
     return data, None, None
+#-------------------------------------------------------------------------------------------------------------------
 
-
+#-------------------------------------------------------------------------------------------------------------------
+# Function to send APDU command and read response from serial device
+#-------------------------------------------------------------------------------------------------------------------
 def send_apdu_and_read(ser: serial.Serial, apdu: list, add_newline=True):
     b = apdu_to_bytes(apdu)
     
@@ -113,6 +122,7 @@ def send_apdu_and_read(ser: serial.Serial, apdu: list, add_newline=True):
         return None, None, None
 
     return return_value
+#-------------------------------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------------------------------
 # Return the path of the script
@@ -343,6 +353,9 @@ def actual_date_time():
     return curr_time.strftime('%Y_%m_%d__%H_%M_%S_%f')
 #------------------------------------------------------------------------------------------------------------------- 
 
+#-------------------------------------------------------------------------------------------------------------------
+# Function to read from the card reader in a separate thread
+#-------------------------------------------------------------------------------------------------------------------
 def read(reader_config, reader_name, stop_event):
     pPort = reader_config['port']
     pBaudrate = reader_config['baudrate']
@@ -376,28 +389,45 @@ def read(reader_config, reader_name, stop_event):
             log_and_print(f'{reader_name}: Sending APDU: {apdu}', 'read', 'DEBUG')
             payload, sw1, sw2 = send_apdu_and_read(ser, apdu)
 
+            #---------------------------------------------------------------------------------
+            # Processing of the code
+            #---------------------------------------------------------------------------------
             if payload is None or len(payload) == 0:
                 log_and_print(f'{reader_name}: No card / no response', 'read', 'DEBUG')
             else:
-                log_and_print(f'{reader_name}: {str(payload)}', 'read', 'DEBUG')
-                zapis_do_opc(code, str(payload))
+                reader_data = str(payload)
+                #-----------------------------------------------------------
+                # Start with b' and ends with r' 
+                #-----------------------------------------------------------
+                if reader_data.startswith("b'") and reader_data.endswith("r'"):
+                    reader_data = reader_data[2:-3]
+                    
+                    log_and_print(f'{reader_name}: {reader_data}', 'read', 'DEBUG')
+                    zapis_do_opc(code, reader_data)
 
-                hex_payload = binascii.hexlify(payload).decode('ascii').upper()
-                if sw1 is not None and sw2 is not None:				
-                    log_and_print(f'{reader_name}: UID: {hex_payload}  SW: {sw1:02X} {sw2:02X}', 'read', 'INFO')
-                else:
-                    log_and_print(f'{reader_name}: UID (no SW): {hex_payload}', 'read', 'INFO')
+                    hex_payload = binascii.hexlify(payload).decode('ascii').upper()
+                    if sw1 is not None and sw2 is not None:				
+                        log_and_print(f'{reader_name}: UID: {hex_payload}  SW: {sw1:02X} {sw2:02X}', 'read', 'INFO')
+                    else:
+                        log_and_print(f'{reader_name}: UID (no SW): {hex_payload}', 'read', 'INFO')
+
+                time.sleep(1)
+                #-----------------------------------------------------------
+            #---------------------------------------------------------------------------------
 
             after  = datetime.now()
 
             log_and_print(f'{reader_name}: Read duration: {(after - before).total_seconds():.3f} seconds', 'read', 'DEBUG')
 
+            #---------------------------------------------------------------------------------
             # Write to opc tag health_check
+            #---------------------------------------------------------------------------------
             if health_timer_count >= 10:
                 health_check = cteni_z_opc(code_health_check)
                 health_check += 1
                 zapis_do_opc(code_health_check, health_check)
                 health_timer_count = 0
+            #---------------------------------------------------------------------------------
 
             health_timer_count += 1
 
@@ -407,6 +437,7 @@ def read(reader_config, reader_name, stop_event):
             ser.close()
         except Exception:
             pass
+#-------------------------------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------------------------------
 # Main function to start the scanner thread
