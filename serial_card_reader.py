@@ -97,6 +97,26 @@ def parse_serial_response(line: bytes):
 #-------------------------------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------------------------------
+# Convert from hex to dec
+#-------------------------------------------------------------------------------------------------------------------
+def hex_to_decimal(hex_string: str) -> int:
+    """Convert hexadecimal string to decimal integer.
+    
+    Args:
+        hex_string: Hex string with or without '0x' prefix (e.g., "1A3F" or "0x1A3F")
+        
+    Returns:
+        Decimal integer value
+    """
+    # Remove '0x' or '0X' prefix if present
+    hex_string = hex_string.strip()
+    if hex_string.startswith(('0x', '0X')):
+        hex_string = hex_string[2:]
+    
+    return int(hex_string, 16)
+#-------------------------------------------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------------------------------------------
 # Function to send APDU command and read response from serial device
 #-------------------------------------------------------------------------------------------------------------------
 def send_apdu_and_read(ser: serial.Serial, apdu: list, add_newline=True):
@@ -382,8 +402,9 @@ def read(reader_config, reader_name, stop_event):
         health_timer_count = 0
 
         while not stop_event.is_set():
-
             before  = datetime.now()
+
+            zapis_do_opc(code_potvrzeni, False)
 
             apdu = APDU_COMMANDS['get_uid']['apdu']
             log_and_print(f'{reader_name}: Sending APDU: {apdu}', 'read', 'DEBUG')
@@ -402,10 +423,11 @@ def read(reader_config, reader_name, stop_event):
                 if reader_data.startswith("b'") and reader_data.endswith("r'"):
                     reader_data = reader_data[2:-3]
                     
-                    
+                    dec_reader_data = hex_to_decimal(reader_data)
 
                     log_and_print(f'{reader_name}: {reader_data}', 'read', 'DEBUG')
-                    zapis_do_opc(code, reader_data)
+                    zapis_do_opc(code, str(dec_reader_data))
+                    #zapis_do_opc(code, 'TEST')
 
                     hex_payload = binascii.hexlify(payload).decode('ascii').upper()
                     if sw1 is not None and sw2 is not None:				

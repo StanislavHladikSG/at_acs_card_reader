@@ -1,6 +1,6 @@
 {
     "log_level": "INFO",
-    "log_retention_days": 30,
+    "log_retention_days": 1,
     "reader_configurations": [{
         "port": "/dev/ttyACM_back_left",
         "baudrate": 115200,
