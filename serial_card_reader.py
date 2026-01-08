@@ -402,6 +402,8 @@ def read(reader_config, reader_name, stop_event):
                 if reader_data.startswith("b'") and reader_data.endswith("r'"):
                     reader_data = reader_data[2:-3]
                     
+                    
+
                     log_and_print(f'{reader_name}: {reader_data}', 'read', 'DEBUG')
                     zapis_do_opc(code, reader_data)
 
