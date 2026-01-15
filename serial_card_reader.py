@@ -227,6 +227,7 @@ def load_config(config_file=None):
             readers = []
             for idx, reader_config in enumerate(reader_configs):
                 reader = {
+                    'reader_type': reader_config.get('reader_type', 'default'),
                     'port': reader_config.get('port', '/dev/ttyACM_back_left'),
                     'baudrate': reader_config.get('baudrate', 115200),
                     'interval': reader_config.get('interval', 1.0),
@@ -248,6 +249,7 @@ def load_config(config_file=None):
         log_and_print(funkce=inspect.currentframe().f_code.co_name, text="Using default configuration values", type_of_log="INFO")
         return {
             'readers': [{
+                'reader_type': 'default',
                 'port': '/dev/ttyACM_back_left',
                 'baudrate': 115200,
                 'interval': 1.0,
@@ -377,6 +379,7 @@ def actual_date_time():
 # Function to read from the card reader in a separate thread
 #-------------------------------------------------------------------------------------------------------------------
 def read(reader_config, reader_name, stop_event):
+    reader_type = reader_config.get('reader_type', 'default')
     pPort = reader_config['port']
     pBaudrate = reader_config['baudrate']
     pInterval = reader_config['interval']
@@ -384,6 +387,8 @@ def read(reader_config, reader_name, stop_event):
     code_potvrzeni = reader_config['code_potvrzeni']
     code_health_check = reader_config['code_health_check']
     code_health_check_message = reader_config['code_health_check_message']
+
+    log_and_print(f'{reader_name} ({pPort}): Reader type: {reader_type}', 'read', 'INFO')
 
     try:
         ser = serial.Serial(pPort, pBaudrate, timeout=1)
@@ -406,9 +411,54 @@ def read(reader_config, reader_name, stop_event):
 
             zapis_do_opc(code_potvrzeni, False)
 
-            apdu = APDU_COMMANDS['get_uid']['apdu']
-            log_and_print(f'{reader_name}: Sending APDU: {apdu}', 'read', 'DEBUG')
-            payload, sw1, sw2 = send_apdu_and_read(ser, apdu)
+            payload = None
+            sw1 = None
+            sw2 = None
+
+            #---------------------------------------------------------------------------------
+            # Handle different reader types
+            #---------------------------------------------------------------------------------
+            if reader_type == 'APR' or reader_type == 'Elvac':
+                #---------------------------------------------------------------------------------
+                # APR is a PASSIVE reader - it auto-sends UID as ASCII hex when card detected
+                # No APDU commands needed - just listen for incoming data
+                # Format: ASCII hex string like "00CE01A275\r\n" (typically 9600 baud)
+                #---------------------------------------------------------------------------------
+                try:
+                    # Just read whatever the reader sends (blocking with timeout)
+                    line = ser.readline()
+                    if line:
+                        # APR sends ASCII hex text, strip CR/LF
+                        text = line.decode('utf-8', errors='ignore').strip()
+                        if text:
+                            log_and_print(f'{reader_name}: APR received: {text}', 'read', 'DEBUG')
+                            # Convert ASCII hex to bytes
+                            try:
+                                # Remove any spaces or non-hex characters
+                                hex_str = ''.join(c for c in text if c in '0123456789abcdefABCDEF')
+                                if hex_str:
+                                    # Pad with leading zero if odd length (bytes.fromhex requires even length)
+                                    if len(hex_str) % 2 != 0:
+                                        hex_str = '0' + hex_str
+                                    elif len(hex_str) == 12:
+                                        hex_str = hex_str[:-2]
+                                    elif len(hex_str) > 10:
+                                        hex_str = hex_str[:10]
+                                    payload = bytes.fromhex(hex_str)
+                            except ValueError as e:
+                                log_and_print(f'{reader_name}: APR hex parse error: {e}', 'read', 'WARNING')
+                except Exception as e:
+                    log_and_print(f'{reader_name}: APR read error: {e}', 'read', 'ERROR')
+            else:
+                #---------------------------------------------------------------------------------
+                # Default reader type - uses APDU commands
+                #---------------------------------------------------------------------------------
+                apdu = APDU_COMMANDS['get_uid']['apdu']
+                add_newline = True
+
+                log_and_print(f'{reader_name}: Sending APDU: {apdu}', 'read', 'DEBUG')
+                payload, sw1, sw2 = send_apdu_and_read(ser, apdu, add_newline=add_newline)
+            #---------------------------------------------------------------------------------
 
             #---------------------------------------------------------------------------------
             # Processing of the code
@@ -416,27 +466,23 @@ def read(reader_config, reader_name, stop_event):
             if payload is None or len(payload) == 0:
                 log_and_print(f'{reader_name}: No card / no response', 'read', 'DEBUG')
             else:
-                reader_data = str(payload)
-                #-----------------------------------------------------------
-                # Start with b' and ends with r' 
-                #-----------------------------------------------------------
-                if reader_data.startswith("b'") and reader_data.endswith("r'"):
-                    reader_data = reader_data[2:-3]
-                    
-                    dec_reader_data = hex_to_decimal(reader_data)
-
-                    log_and_print(f'{reader_name}: {reader_data}', 'read', 'DEBUG')
+                hex_payload = binascii.hexlify(payload).decode('ascii').upper()
+                log_and_print(f'{reader_name}: Raw payload: {hex_payload}', 'read', 'INFO')
+                
+                # Convert hex payload to decimal
+                try:
+                    dec_reader_data = hex_to_decimal(hex_payload)
+                    log_and_print(f'{reader_name}: UID hex: {hex_payload}, decimal: {dec_reader_data}', 'read', 'INFO')
                     zapis_do_opc(code, str(dec_reader_data))
-                    #zapis_do_opc(code, 'TEST')
-
-                    hex_payload = binascii.hexlify(payload).decode('ascii').upper()
+                    
                     if sw1 is not None and sw2 is not None:				
                         log_and_print(f'{reader_name}: UID: {hex_payload}  SW: {sw1:02X} {sw2:02X}', 'read', 'INFO')
                     else:
                         log_and_print(f'{reader_name}: UID (no SW): {hex_payload}', 'read', 'INFO')
+                except Exception as e:
+                    log_and_print(f'{reader_name}: Error converting payload: {e}', 'read', 'ERROR')
 
                 time.sleep(1)
-                #-----------------------------------------------------------
             #---------------------------------------------------------------------------------
 
             after  = datetime.now()
