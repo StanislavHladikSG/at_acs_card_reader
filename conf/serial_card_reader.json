@@ -1,0 +1,24 @@
+{
+    "log_level": "INFO",
+    "log_retention_days": 1,
+    "reader_configurations": [
+        {
+            "baudrate": 115200,
+            "interval": 0.1,
+            "port": "/dev/ttyACM_back_left",
+            "reader": "ns=1;i=100011",
+            "reader_health_check": "ns=1;i=100013",
+            "reader_health_check_message": "ns=1;i=100014",
+            "reader_potvrzeni": "ns=1;i=100012"
+        },
+        {
+            "baudrate": 9600,
+            "interval": 0.1,
+            "port": "/dev/ttyACM_back_right",
+            "reader2": "ns=1;i=100015",
+            "reader2_health_check": "ns=1;i=100017",
+            "reader2_health_check_message": "ns=1;i=100018",
+            "reader2_potvrzeni": "ns=1;i=100016"
+        }
+    ]
+}

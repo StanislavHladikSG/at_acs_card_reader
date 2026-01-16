@@ -32,6 +32,10 @@ try:
 except Exception:
 	raise SystemExit("pyserial is required. Install with: pip install pyserial")
 
+# Import conf module for configuration
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), 'conf'))
+import conf
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 
 server_url = "opc.tcp://0.0.0.0:4840"
@@ -206,7 +210,7 @@ def load_config(config_file=None):
     """Load configuration from JSON file with default values"""
     if config_file is None:
         script_dir = get_script_path()
-        config_file = os.path.join(script_dir, 'serial_card_reader.json')
+        config_file = os.path.join(script_dir, 'conf', 'serial_card_reader.json')
     
     try:
         with open(config_file) as f:
@@ -572,11 +576,16 @@ if __name__ == '__main__':
     log_and_print(text='-----------------------------------------------------')
     log_and_print(text="Začátek")
 
-    # Load configuration from JSON file
-    config = load_config()
-    readers_config = config['readers']
-    log_retention_days = config['log_retention_days']
-    log_level = config['log_level']
+    # Update local configuration from remote source if needed
+    conf.update_local_config_from_remote()
+
+    # Load configuration using conf module
+    readers_config = conf.get_reader_configurations()
+    log_retention_days = conf.get_log_retention_days()
+    log_level = conf.get_log_level()
+    
+    log_and_print(text=f"Version: {conf.get_version()}")
+    log_and_print(text=f"Configuration loaded: {len(readers_config)} reader(s)")
     
     # Convert string log level to logging constant
     numeric_level = getattr(logging, log_level, logging.INFO)
